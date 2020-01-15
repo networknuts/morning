@@ -1,0 +1,92 @@
+provider "aws" {
+	region = "ap-south-1"
+}
+
+#creating security group
+
+resource "aws_security_group" "nilesh-ssh-http" {
+	name = "nilesh-ssh-http"
+	description = "allow http and ssh traffic"
+
+	ingress {
+		from_port = 22
+		to_port = 22
+		protocol = "tcp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	ingress {
+		from_port = 80
+		to_port = 80
+		protocol = "tcp"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+	egress {
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
+		cidr_blocks = ["0.0.0.0/0"]
+	}
+
+}
+#security group end here
+
+#instance code start here
+
+resource "aws_instance" "good-morning" {
+	ami = "ami-5b673c34"
+	instance_type = "t2.micro"
+	availability_zone = "ap-south-1a"
+	security_groups = ["${aws_security_group.nilesh-ssh-http.name}"]
+	key_name = "zoomkey"
+	user_data = <<-EOF
+		#!/bin/bash
+		sudo yum install httpd -y
+		sudo systemctl start httpd
+		sudo systemctl enable httpd
+		echo "<h1>sample webpage using terraform</h1>" >> /var/www/html/index.html
+	EOF
+
+	tags = {
+		Name = "webserver"
+	}
+
+}
+
+#instance code end here
+
+#assign elastic IP to the instance
+
+resource "aws_eip" "good-morning-eip" {
+	instance = "${aws_instance.good-morning.id}"
+#	vpc = true
+	tags = {
+		Name = "good-morning-eip"
+	}
+
+}
+
+#eip configuration end here
+
+#create a ebs volume and attach it
+resource "aws_ebs_volume" "data-vol" {
+	availability_zone = "ap-south-1a"
+	size = 1
+	tags = {
+		Name = "data-volume"
+	}
+
+}
+
+resource "aws_volume_attachment" "good-morning-vol" {
+	device_name = "/dev/sdc"
+	volume_id = "${aws_ebs_volume.data-vol.id}"
+	instance_id = "${aws_instance.good-morning.id}"
+}
+
+
+
+
+
+

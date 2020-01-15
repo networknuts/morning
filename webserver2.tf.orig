@@ -1,0 +1,28 @@
+provider "aws" {
+	region = "ap-south-1"
+}
+
+resource "aws_instance" "good-morning2" {
+	ami = "ami-5b673c34"
+	instance_type = "t2.micro"
+	
+	tags = {
+		Name = "webserver2"
+	}
+
+#	lifecycle {
+#		prevent_destroy = "true"
+#	}
+
+}
+
+
+resource "aws_instance" "good-morning3" {
+	ami = "ami-5b673c34"
+	instance_type = "t2.micro"
+	tags = {
+		Name = "webserver3"
+	}
+}
+
+
